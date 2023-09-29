@@ -811,65 +811,6 @@ rule null_is_terminal_if_requiredConformations_gt_allowedBridges_witness_1{
 
 }
 
-rule null_is_terminal_if_requiredConformations_gt_allowedBridges_2(method f) filtered { f-> !f.isView }{
-
-    env e;
-    calldataarg args;
-    EnvelopeUtils.Envelope envelope;
-    uint256 chainId;
-    
-    require envelope.originChainId == chainId;
-
-    ICrossChainReceiver.EnvelopeState state_before = getEnvelopeState(envelope);
-    f(e, args);
-    ICrossChainReceiver.EnvelopeState state_after = getEnvelopeState(envelope);
-
-    assert state_before == ICrossChainReceiver.EnvelopeState.None && state_after != state_before => 
-        to_mathint(getRequiredConfirmation(chainId)) <= to_mathint(getAllowedBridgeAdaptersLength(chainId)); 
-    
-
-}
-
-rule null_is_terminal_if_requiredConformations_gt_allowedBridges_2_witness_1(method f) {
-
-    env e;
-    calldataarg args;
-    EnvelopeUtils.Envelope envelope;
-    uint256 chainId;
-    
-    require envelope.originChainId == chainId;
-
-    ICrossChainReceiver.EnvelopeState state_before = getEnvelopeState(envelope);
-    receiveCrossChainMessage(e, args);
-    ICrossChainReceiver.EnvelopeState state_after = getEnvelopeState(envelope);
-
-    require state_before == ICrossChainReceiver.EnvelopeState.None && state_after != state_before; 
-    satisfy state_before == ICrossChainReceiver.EnvelopeState.None && state_after != state_before => 
-        to_mathint(getRequiredConfirmation(chainId)) <= to_mathint(getAllowedBridgeAdaptersLength(chainId)); 
-    
-
-}
-
-rule null_is_terminal_if_requiredConformations_gt_allowedBridges_2_tight_bound(method f) {
-
-    env e;
-    calldataarg args;
-    EnvelopeUtils.Envelope envelope;
-    uint256 chainId;
-    
-    require envelope.originChainId == chainId;
-
-    ICrossChainReceiver.EnvelopeState state_before = getEnvelopeState(envelope);
-    receiveCrossChainMessage(e, args);
-    ICrossChainReceiver.EnvelopeState state_after = getEnvelopeState(envelope);
-
-    require state_before == ICrossChainReceiver.EnvelopeState.None && state_after != state_before; 
-    satisfy state_before == ICrossChainReceiver.EnvelopeState.None && state_after != state_before => 
-        to_mathint(getRequiredConfirmation(chainId)) == to_mathint(getAllowedBridgeAdaptersLength(chainId)); 
-    
-
-}
-
 
 //Property #16: helper invariant: 
 invariant zero_firstBridgedAt_iff_not_received_from_msg_sender(env e1, bytes32 transactionId)
