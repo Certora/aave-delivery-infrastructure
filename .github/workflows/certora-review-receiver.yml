@@ -42,7 +42,7 @@ jobs:
           touch applyHarness.patch
           make munged
           cd ..
-          certoraRun certora/confs/${{ matrix.rule }}
+          certoraRun security/certora/confs/${{ matrix.rule }}
         env:
           CERTORAKEY: ${{ secrets.CERTORAKEY }}
 

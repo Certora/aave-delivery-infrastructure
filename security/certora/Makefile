@@ -1,7 +1,7 @@
 default: help
 
 PATCH         = applyHarness.patch
-CONTRACTS_DIR = ../src
+CONTRACTS_DIR = ../../src
 MUNGED_DIR    = munged
 
 help:
@@ -13,12 +13,12 @@ help:
 munged:  $(wildcard $(CONTRACTS_DIR)/*.sol) $(PATCH)
 	rm -rf $@
 	mkdir $@
-	cp -r ../src $@
+	cp -r ../../src $@
 	patch -p0 -d $@ < $(PATCH)
 
 record:
 	mkdir tmp
-	cp -r ../src tmp
+	cp -r ../../src tmp
 	diff -ruN tmp $(MUNGED_DIR) | sed 's+tmp/++g' | sed 's+$(MUNGED_DIR)/++g' > $(PATCH)
 	rm -rf tmp
 
