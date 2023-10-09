@@ -38,10 +38,10 @@ jobs:
 
       - name: Verify rule ${{ matrix.rule }}
         run: |
-          cd certora
+          cd security/certora
           touch applyHarness.patch
           make munged
-          cd ..
+          cd ../..
           certoraRun security/certora/confs/${{ matrix.rule }}
         env:
           CERTORAKEY: ${{ secrets.CERTORAKEY }}
