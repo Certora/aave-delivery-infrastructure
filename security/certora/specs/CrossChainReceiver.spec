@@ -231,6 +231,8 @@ rule receive_more_than__requiredConfirmations_diff_3
 // Property #5: An Envelope should be marked as accepted only when it reaches _requiredConfirmations.
 //6.2 Cannot deliver twice - cannot call receiveCrossChainMessage() twice with the same envelope
 //cannot call IBaseReceiverPortal.receiveCrossChainMessage() twice with the same envelope
+
+//Todo: check 2 transactions with the same envelop
 rule cannot_call_IBaseReceiverPortal_receiveCrossChainMessage_twice
 {
   env e1;
@@ -246,20 +248,20 @@ rule cannot_call_IBaseReceiverPortal_receiveCrossChainMessage_twice
   assert receiveCrossChainMessage_call_counter_after - receiveCrossChainMessage_call_counter_before < 2;
 }
 
+
 rule cannot_call_IBaseReceiverPortal_receiveCrossChainMessage_twice_witness
 {
   env e1;
   env e2;
-  bytes encodedTransaction1;
-  bytes encodedTransaction2;
+  bytes encodedTransaction;
   uint256 originChainId;
   
   mathint receiveCrossChainMessage_call_counter_before = _BaseReceiverPortalDummy.receiveCrossChainMessage_success_counter();
-  receiveCrossChainMessage(e1, encodedTransaction1, originChainId);
-  receiveCrossChainMessage(e2, encodedTransaction2, originChainId);
+  receiveCrossChainMessage(e1, encodedTransaction, originChainId);
+  receiveCrossChainMessage(e2, encodedTransaction, originChainId);
   mathint receiveCrossChainMessage_call_counter_after = _BaseReceiverPortalDummy.receiveCrossChainMessage_success_counter();
 
-  satisfy receiveCrossChainMessage_call_counter_after - receiveCrossChainMessage_call_counter_before >= 2;
+  satisfy receiveCrossChainMessage_call_counter_after - receiveCrossChainMessage_call_counter_before == 1;
 }
 
 
