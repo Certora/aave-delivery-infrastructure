@@ -46,6 +46,30 @@ contract Metis is BaseMockDestination {
   }
 }
 
+contract Base is BaseMockDestination {
+  function TRANSACTION_NETWORK() public pure virtual override returns (uint256) {
+    return ChainIds.BASE;
+  }
+}
+
+contract Binance is BaseMockDestination {
+  function TRANSACTION_NETWORK() public pure virtual override returns (uint256) {
+    return ChainIds.BNB;
+  }
+}
+
+contract Gnosis is BaseMockDestination {
+  function TRANSACTION_NETWORK() public pure virtual override returns (uint256) {
+    return ChainIds.GNOSIS;
+  }
+}
+
+contract Zkevm is BaseMockDestination {
+  function TRANSACTION_NETWORK() public pure virtual override returns (uint256) {
+    return ChainIds.POLYGON_ZK_EVM;
+  }
+}
+
 contract Arbitrum_testnet is BaseMockDestination {
   function TRANSACTION_NETWORK() public pure virtual override returns (uint256) {
     return TestNetChainIds.ARBITRUM_GOERLI;
