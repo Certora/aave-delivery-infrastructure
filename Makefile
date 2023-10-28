@@ -16,8 +16,9 @@ BASE_LEDGER = --legacy --mnemonics foo --ledger --mnemonic-indexes $(MNEMONIC_IN
 BASE_KEY = --private-key ${PRIVATE_KEY}
 
 
-custom_ethereum := --with-gas-price 12000000000 # 53 gwei
-custom_polygon :=  --with-gas-price 170000000000 # 560 gwei
+
+custom_ethereum := --with-gas-price 10000000000 # 53 gwei
+custom_polygon :=  --with-gas-price 100000000000 # 560 gwei
 custom_avalanche := --with-gas-price 27000000000 # 27 gwei
 custom_metis-testnet := --legacy --verifier-url https://goerli.explorer.metisdevops.link/api/
 custom_metis := --verifier-url  https://api.routescan.io/v2/network/mainnet/evm/1088/etherscan
@@ -51,11 +52,11 @@ deploy-emergency-registry:
 
 # Deploy Proxy Factories on all networks
 deploy-proxy-factory:
-	$(call deploy_fn,InitialDeployments,ethereum avalanche polygon optimism arbitrum metis base binance gnosis)
+	$(call deploy_fn,InitialDeployments,ethereum avalanche polygon optimism arbitrum metis base binance gnosis zkevm)
 
 # Deploy Cross Chain Infra on all networks
 deploy-cross-chain-infra:
-	$(call deploy_fn,CCC/Deploy_CCC,ethereum avalanche polygon optimism arbitrum metis base binance gnosis)
+	$(call deploy_fn,CCC/Deploy_CCC,ethereum avalanche polygon optimism arbitrum metis base binance gnosis zkevm)
 
 ## Deploy CCIP bridge adapters on all networks
 deploy-ccip-bridge-adapters:
@@ -91,17 +92,20 @@ deploy-base-adapters:
 deploy-gnosis-adapters:
 	$(call deploy_fn,Adapters/DeployGnosisChain,ethereum gnosis)
 
+deploy-zkevm-adapters:
+	$(call deploy_fn,Adapters/DeployZkEVMAdapter,ethereum zkevm)
+
 ## Set sender bridge dapters. Only eth pol avax are needed as other networks will only receive
 set-ccf-sender-adapters:
 	$(call deploy_fn,CCC/Set_CCF_Sender_Adapters,ethereum)
 
 # Set the bridge adapters allowed to receive messages
 set-ccr-receiver-adapters:
-	$(call deploy_fn,CCC/Set_CCR_Receivers_Adapters,ethereum polygon avalanche binance arbitrum optimism base metis gnosis)
+	$(call deploy_fn,CCC/Set_CCR_Receivers_Adapters,ethereum polygon avalanche binance arbitrum optimism base metis gnosis zkevm)
 
 # Sets the required confirmations
 set-ccr-confirmations:
-	$(call deploy_fn,CCC/Set_CCR_Confirmations,ethereum polygon avalanche optimism arbitrum metis base binance gnosis)
+	$(call deploy_fn,CCC/Set_CCR_Confirmations,ethereum polygon avalanche optimism arbitrum metis base binance gnosis zkevm)
 
 # Generate Addresses Json
 write-json-addresses :; forge script scripts/WriteAddresses.s.sol:WriteDeployedAddresses -vvvv
@@ -136,7 +140,7 @@ deploy-full:
 
 # Deploy Proxy Factories on all networks
 deploy-proxy-factory-test:
-	$(call deploy_fn,InitialDeployments,avalanche base)
+	$(call deploy_fn,InitialDeployments,zkevm)
 
 # Deploy Cross Chain Infra on all networks
 deploy-cross-chain-infra-test:
@@ -199,10 +203,16 @@ send-direct-message:
 	$(call deploy_fn,helpers/Send_Direct_CCMessage,ethereum)
 
 deploy_mock_destination:
-	$(call deploy_fn,helpers/Deploy_Mock_destination,base)
+	$(call deploy_fn,helpers/Deploy_Mock_destination,zkevm)
 
 set-approved-ccf-senders:
 	$(call deploy_fn,helpers/Set_Approved_Senders,ethereum avalanche polygon)
 
 send-message:
 	@$(call deploy_fn,helpers/Testnet_ForwardMessage,ethereum,Testnet_ForwardMessage)
+
+deploy_mock_ccc:
+	$(call deploy_fn,helpers/mocks/Deploy_Mock_CCC,zkevm)
+
+send-message-via-adapter:
+	$(call deploy_fn,helpers/Send_Message_Via_Adapter,ethereum)
