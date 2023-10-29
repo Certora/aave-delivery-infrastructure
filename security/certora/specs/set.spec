@@ -33,7 +33,7 @@ definition MAP_IS_INVERSE_OF_ARRAY() returns bool = forall uint256 chainId. fora
 * @return true if for every non-zero bytes32 value stored in in the set map it holds that array(map(value) - 1) == value
 */
 definition ARRAY_IS_INVERSE_OF_MAP() returns bool = forall uint256 chainId. forall bytes32 a. forall uint256 b. 
-            ((to_mathint(b) == mirrorMap[chainId][a]-1) => (mirrorMap[chainId][a] != 0)) => (mirrorArray[chainId][b] == a);
+            (to_mathint(b) == mirrorMap[chainId][a]-1) => ((mirrorMap[chainId][a] != 0) => (mirrorArray[chainId][b] == a));
 
 
 

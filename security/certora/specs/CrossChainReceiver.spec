@@ -1,3 +1,4 @@
+import "methods.spec";
 import "set.spec";
 
 using BaseReceiverPortalDummy as _BaseReceiverPortalDummy;
@@ -9,9 +10,6 @@ methods{
   function isReceiverBridgeAdapterAllowed(address,uint256) external returns (bool) envfree;
   function getReceiverBridgeAdaptersByChain(uint256) external returns (address[]) envfree;
   function getConfigurationByChain(uint256) external returns (ICrossChainReceiver.ReceiverConfiguration) envfree;
-  function owner() external returns (address) envfree;
-  function guardian() external returns (address) envfree;
-
   function getTransactionState(bytes32) external returns (ICrossChainReceiver.TransactionStateWithoutAdapters) envfree;
   function getConfigurationByChain(uint256) external returns (ICrossChainReceiver.ReceiverConfiguration) envfree;
   function isTransactionReceivedByAdapter(bytes32,address) external returns (bool) envfree;
@@ -30,8 +28,7 @@ methods{
   function compare(bytes,bytes) external returns (bool) envfree;
   function compare(bytes32,bytes32) external returns (bool) envfree;
   function compare(EnvelopeUtils.Envelope,EnvelopeUtils.Envelope) external returns (bool) envfree;
-  function getValidityTimestamp(uint256) external returns (uint120) envfree;
-	function getConfirmations(bytes32) external returns (uint8) envfree;
+  function getConfirmations(bytes32) external returns (uint8) envfree;
 	function getFirstBridgedAt(bytes32) external returns (uint120) envfree;
   function _BaseReceiverPortalDummy.receiveCrossChainMessage_success_counter() external returns (uint256) envfree;
 
