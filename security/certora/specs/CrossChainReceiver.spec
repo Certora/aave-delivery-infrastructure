@@ -1,5 +1,5 @@
 import "methods.spec";
-import "set.spec";
+import "allowedBridgeAdaptersAddressSet.spec";
 
 using BaseReceiverPortalDummy as _BaseReceiverPortalDummy;
 
@@ -40,11 +40,9 @@ methods{
 
 
 // invariants of AddressSet
-use invariant set_size_leq_max_uint160;
-//Ignore fail in CI
 use invariant addressSetInvariant;
-//Ignore fail in CI
 use invariant setInvariant;
+use rule set_size_eq_max_uint160_witness;
 
 // CVL shortcut functions
 function getRequiredConfirmation(uint256 chainId) returns uint8
@@ -145,7 +143,8 @@ filtered {f -> f.selector == sig:updateConfirmations(ICrossChainReceiver.Confirm
 }
 
 
-// 4: To forward a received Envelope to the final address destination, it needs to receive at least _requiredConfirmations.
+// Property #4: To forward a received Envelope to the final address destination, it needs to receive at least _requiredConfirmations.
+// Property #5: An Envelope should be marked as accepted only when it reaches _requiredConfirmations.
 
 //TODO: check the general case (diff > 2)
 
@@ -156,7 +155,7 @@ rule receive_more_than__requiredConfirmations_diff_2
   env e1;
   env e2;
   require e1.block.timestamp > 0;   
-  require e1.block.timestamp < e2.block.timestamp;   
+  require e1.block.timestamp <= e2.block.timestamp;   
   require e2.block.timestamp < 2 ^ 120;   
    
   bytes32 transactionId;
@@ -194,8 +193,8 @@ rule receive_more_than__requiredConfirmations_diff_3
   env e2;
   env e3;
   require e1.block.timestamp > 0;   
-  require e1.block.timestamp < e2.block.timestamp;   
-  require e2.block.timestamp < e3.block.timestamp;   
+  require e1.block.timestamp <= e2.block.timestamp;   
+  require e2.block.timestamp <= e3.block.timestamp;   
   require e3.block.timestamp < 2 ^ 120;   
    
   bytes32 transactionId;
@@ -225,7 +224,7 @@ rule receive_more_than__requiredConfirmations_diff_3
 
 
 
-// Property #5: An Envelope should be marked as accepted only when it reaches _requiredConfirmations.
+// Property #6: An Envelope should be delivered to destination only once.
 //6.2 Cannot deliver twice - cannot call receiveCrossChainMessage() twice with the same envelope
 //cannot call IBaseReceiverPortal.receiveCrossChainMessage() twice with the same envelope
 
@@ -499,7 +498,9 @@ rule envelope_state_witness_none_to_delivered{
     calldataarg args;
     bytes32 envelopeId;
     ICrossChainReceiver.EnvelopeState state_before = getEnvelopeState(envelopeId);
-    receiveCrossChainMessage(e, args);
+    bytes encodedTransaction;
+    uint256 originChainId;
+    receiveCrossChainMessage(e, encodedTransaction, originChainId);
     ICrossChainReceiver.EnvelopeState state_after = getEnvelopeState(envelopeId);
     require state_before == ICrossChainReceiver.EnvelopeState.None;
     satisfy state_before == ICrossChainReceiver.EnvelopeState.None => state_after == ICrossChainReceiver.EnvelopeState.Delivered;
@@ -521,10 +522,11 @@ rule envelope_state_witness_confirmed_to_delivered{
 rule envelope_state_witness_none_to_confirmed{
 
     env e;
-    calldataarg args;
     bytes32 envelopeId;
     ICrossChainReceiver.EnvelopeState state_before = getEnvelopeState(envelopeId);
-    receiveCrossChainMessage(e, args);
+    bytes encodedTransaction;
+    uint256 originChainId;
+    receiveCrossChainMessage(e, encodedTransaction, originChainId);
     ICrossChainReceiver.EnvelopeState state_after = getEnvelopeState(envelopeId);
 
     require state_before == ICrossChainReceiver.EnvelopeState.None;
@@ -538,13 +540,15 @@ rule envelope_state_witness_none_none_confirmed{
     env e2;
     require e1.block.timestamp <= e2.block.timestamp;
     require e2.block.timestamp < 2^120;
-    calldataarg args1;
-    calldataarg args2;
     bytes32 envelopeId;
     ICrossChainReceiver.EnvelopeState state1 = getEnvelopeState(envelopeId);
-    receiveCrossChainMessage(e1, args1);
+    bytes encodedTransaction1;
+    uint256 originChainId1;
+    receiveCrossChainMessage(e1, encodedTransaction1, originChainId1);
     ICrossChainReceiver.EnvelopeState state2 = getEnvelopeState(envelopeId);
-    receiveCrossChainMessage(e2, args2);
+    bytes encodedTransaction2;
+    uint256 originChainId2;
+    receiveCrossChainMessage(e2, encodedTransaction2, originChainId2);
     ICrossChainReceiver.EnvelopeState state3 = getEnvelopeState(envelopeId);
     require state1 == ICrossChainReceiver.EnvelopeState.None;
     require state2 == ICrossChainReceiver.EnvelopeState.None;
@@ -561,9 +565,13 @@ rule envelope_state_witness_none_confirmed_confirmed{
     calldataarg args2;
     bytes32 envelopeId;
     ICrossChainReceiver.EnvelopeState state1 = getEnvelopeState(envelopeId);
-    receiveCrossChainMessage(e1, args1);
+    bytes encodedTransaction1;
+    uint256 originChainId1;
+    receiveCrossChainMessage(e1, encodedTransaction1, originChainId1);
     ICrossChainReceiver.EnvelopeState state2 = getEnvelopeState(envelopeId);
-    receiveCrossChainMessage(e2, args2);
+    bytes encodedTransaction2;
+    uint256 originChainId2;
+    receiveCrossChainMessage(e2, encodedTransaction2, originChainId2);
     ICrossChainReceiver.EnvelopeState state3 = getEnvelopeState(envelopeId);
     require state1 == ICrossChainReceiver.EnvelopeState.None;
     require state2 == ICrossChainReceiver.EnvelopeState.Confirmed;
@@ -617,14 +625,15 @@ rule confirmations_increments_if_received_from_msg_sender_witness
 {
   env e;
   require e.block.timestamp < 2^100;
-  calldataarg args;
   
   bytes32 transactionId;
   requireInvariant zero_firstBridgedAt_iff_not_received_from_msg_sender(e, transactionId);
 
   mathint confirmations_before = get_confirmations(transactionId);
   bool is_msg_sender_received_before = isTransactionReceivedByAdapter(transactionId, e.msg.sender);
-  receiveCrossChainMessage(e, args);
+  bytes encodedTransaction;
+  uint256 originChainId;
+  receiveCrossChainMessage(e, encodedTransaction, originChainId);
   mathint confirmations_after = get_confirmations(transactionId);
   bool is_msg_sender_received_after = isTransactionReceivedByAdapter(transactionId, e.msg.sender);
 
@@ -720,8 +729,9 @@ rule requiredConfirmation_is_positive_after_updateConfirmations(uint256 chainId)
 
       env e;
       calldataarg args;
+      method f;
       require getRequiredConfirmation(chainId) > 0;
-      updateConfirmations(e, args);
+      f(e, args);
       assert getRequiredConfirmation(chainId) > 0;
 }
 
