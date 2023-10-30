@@ -89,6 +89,44 @@ rule only_owner_can_change_bridge_adapters
   assert e.msg.sender != owner() => is_allowed_before == is_allowed_after;
 }
 
+rule only_single_bridge_adapter_added
+{
+  env e;
+  address bridgeAdapter;
+  uint256 chainId;
+  ICrossChainReceiver.ReceiverBridgeAdapterConfigInput[] adapters;
+
+  bool is_allowed_before  = isReceiverBridgeAdapterAllowed(bridgeAdapter, chainId);
+  allowReceiverBridgeAdapters(e, adapters);
+  bool is_allowed_after  = isReceiverBridgeAdapterAllowed(bridgeAdapter, chainId);
+
+  assert 
+    !(adapters.length == 1
+    && adapters[0].bridgeAdapter == bridgeAdapter
+    && adapters[0].chainIds.length == 1
+    && adapters[0].chainIds[0] == chainId) => is_allowed_before == is_allowed_after;
+}
+
+rule only_single_bridge_adapter_removed
+{
+  env e;
+  address bridgeAdapter;
+  uint256 chainId;
+  ICrossChainReceiver.ReceiverBridgeAdapterConfigInput[] adapters;
+
+  requireInvariant addressSetInvariant(chainId);
+
+  bool is_allowed_before  = isReceiverBridgeAdapterAllowed(bridgeAdapter, chainId);
+  disallowReceiverBridgeAdapters(e, adapters);
+  bool is_allowed_after  = isReceiverBridgeAdapterAllowed(bridgeAdapter, chainId);
+
+  assert 
+    !(adapters.length == 1
+    && adapters[0].bridgeAdapter == bridgeAdapter
+    && adapters[0].chainIds.length == 1
+    && adapters[0].chainIds[0] == chainId) => is_allowed_before == is_allowed_after;
+}
+
 rule only_owner_can_change_bridge_adapters_witness(method f) 
 filtered {f -> f.selector == sig:allowReceiverBridgeAdapters(ICrossChainReceiver.ReceiverBridgeAdapterConfigInput[]).selector 
   || f.selector == sig:disallowReceiverBridgeAdapters(ICrossChainReceiver.ReceiverBridgeAdapterConfigInput[]) .selector}
