@@ -23,7 +23,7 @@ methods{
   function getEncodedTransactionId(bytes) external returns (bytes32) envfree;
   function getEnvelopeId(EnvelopeUtils.Envelope) external returns (bytes32) envfree;
   function getEnvelopeId(bytes) external returns (bytes32) envfree;
-  function getEnvelope(bytes) external returns (EnvelopeUtils.Envelope memory) envfree;
+  function getEnvelope_without_require(bytes) external returns (EnvelopeUtils.Envelope memory) envfree;
   function getEnvelope_with_require(bytes) external returns (EnvelopeUtils.Envelope memory) envfree;
   function compare(bytes,bytes) external returns (bool) envfree;
   function compare(bytes32,bytes32) external returns (bool) envfree;
@@ -31,6 +31,9 @@ methods{
   function getConfirmations(bytes32) external returns (uint8) envfree;
 	function getFirstBridgedAt(bytes32) external returns (uint120) envfree;
   function _BaseReceiverPortalDummy.receiveCrossChainMessage_success_counter() external returns (uint256) envfree;
+  function _BaseReceiverPortalDummy.get_receive_cross_chain_message_counter
+            (address,uint256,bytes) external returns (uint256) envfree;
+
 
   // declared in IBaseReceiverPortal.sol
   function  _.receiveCrossChainMessage_reverts() internal => NONDET;
@@ -262,10 +265,11 @@ filtered {f -> f.selector == sig:updateConfirmations(ICrossChainReceiver.Confirm
 // Property #4: To forward a received Envelope to the final address destination, it needs to receive at least _requiredConfirmations.
 // Property #5: An Envelope should be marked as accepted only when it reaches _requiredConfirmations.
 
-//TODO: check the general case (diff > 2)
-
 // If an envelope has (requiredConfirmations - n) confirmations, 
 // then n different adaptors must call receiveCrossChainMessage in order to change the enevlope's state (checked for n=2, 3).  
+// TODO: low priority - check the general case (diff > 3)
+// TODO: check if exactly n confirmation arrived the state must change to confirmed. 
+
 rule receive_more_than__requiredConfirmations_diff_2
 {
   env e1;
@@ -302,7 +306,7 @@ rule receive_more_than__requiredConfirmations_diff_2
       => e1.msg.sender != e2.msg.sender;
 }
 
-//time out. Ignore in CI
+//time out in cli 4.13.1. TODO: Enable in CI with cli version >= 5.0.2
 rule receive_more_than__requiredConfirmations_diff_3
 {
   env e1;
@@ -895,6 +899,7 @@ invariant firstBridgedAt_happened_in_the_past(env e1, bytes32 transactionId)
 
 
 //Property #15a: if required confirmations > # of allowed bridge no message can transition from None to either Confirmed or Delivered.
+//fail: todo: add invarint, add to CI
 rule null_is_terminal_if_requiredConformations_gt_allowedBridges(method f) filtered { f-> !f.isView }{
 
     env e;
@@ -902,6 +907,7 @@ rule null_is_terminal_if_requiredConformations_gt_allowedBridges(method f) filte
     EnvelopeUtils.Envelope envelope;
     uint256 chainId;
     
+    requireInvariant addressSetInvariant(chainId);
     require to_mathint(getRequiredConfirmation(chainId)) > to_mathint(getAllowedBridgeAdaptersLength(chainId)); 
     require envelope.originChainId == chainId;
 
@@ -937,6 +943,27 @@ rule null_is_terminal_if_requiredConformations_gt_allowedBridges_witness_anteced
 }
 
 
+rule null_is_terminal_if_requiredConformations_gt_allowedBridges_2_tight_bound(method f) {
+
+    env e;
+    calldataarg args;
+    EnvelopeUtils.Envelope envelope;
+    uint256 chainId;
+    
+    require envelope.originChainId == chainId;
+
+    ICrossChainReceiver.EnvelopeState state_before = getEnvelopeState(envelope);
+    receiveCrossChainMessage(e, args);
+    ICrossChainReceiver.EnvelopeState state_after = getEnvelopeState(envelope);
+
+    require state_before == ICrossChainReceiver.EnvelopeState.None && state_after != state_before; 
+    satisfy state_before == ICrossChainReceiver.EnvelopeState.None && state_after != state_before => 
+        to_mathint(getRequiredConfirmation(chainId)) == to_mathint(getAllowedBridgeAdaptersLength(chainId)); 
+    
+
+}
+
+
 //Property #16: helper invariant: 
 invariant zero_firstBridgedAt_iff_not_received_from_msg_sender(env e1, bytes32 transactionId)
         getFirstBridgedAt(transactionId) == 0 <=> !isTransactionReceivedByAdapter(transactionId, e1.msg.sender)
@@ -959,32 +986,6 @@ invariant zero_firstBridgedAt_iff_not_received_from_msg_sender(env e1, bytes32 t
 // Prover diagnostics
 // 
 
-rule getEnvelopeId_envelope_reachability {
-    EnvelopeUtils.Envelope envelope;
-    getEnvelopeId(envelope);
-    satisfy true;
-}
-
-
-rule getEnvelopeId_encodedTransaction_reachability {
-  bytes encodedTransaction;
-  getEnvelopeId(encodedTransaction);
-  satisfy true;
-}
-
-rule getEnvelope_reachability {
-  calldataarg args;
- getEnvelope(args);
-  satisfy true;
-}
-
-rule getEnvelopeState_reachability {
-  env e;
-  EnvelopeUtils.Envelope envelope;
-
-  getEnvelopeState(envelope);
-  satisfy true;
-}
 
 rule reachability {
   env e;
@@ -1001,7 +1002,7 @@ rule encodeDecodeWorks() {
   EnvelopeUtils.Envelope envelope1;
   bytes32 envelopeId1 = getEnvelopeId(envelope1);
   bytes encodedTransaction;
-  EnvelopeUtils.Envelope envelope2 = getEnvelope(encodedTransaction);
+  EnvelopeUtils.Envelope envelope2 = getEnvelope_without_require(encodedTransaction);
   bytes32 envelopeId2 = getEnvelopeId(envelope2);
   assert compare(envelope1, envelope2) => envelopeId1 == envelopeId2;
 }
@@ -1011,7 +1012,7 @@ rule encodeDecodeWorks_witness() {
   EnvelopeUtils.Envelope envelope1;
   bytes32 envelopeId1 = getEnvelopeId(envelope1);
   bytes encodedTransaction;
-  EnvelopeUtils.Envelope envelope2 = getEnvelope(encodedTransaction);
+  EnvelopeUtils.Envelope envelope2 = getEnvelope_without_require(encodedTransaction);
   bytes32 envelopeId2 = getEnvelopeId(envelope2);
   require compare(envelope1, envelope2);
   satisfy envelopeId1 == envelopeId2;
@@ -1021,7 +1022,7 @@ rule encodeDecodeWorks_witness_2() {
   EnvelopeUtils.Envelope envelope1;
   bytes32 envelopeId1 = getEnvelopeId(envelope1);
   bytes encodedTransaction;
-  EnvelopeUtils.Envelope envelope2 = getEnvelope(encodedTransaction);
+  EnvelopeUtils.Envelope envelope2 = getEnvelope_without_require(encodedTransaction);
   bytes32 envelopeId2 = getEnvelopeId(envelope2);
   require envelopeId1 != envelopeId2;
   satisfy !compare(envelope1, envelope2);
@@ -1058,10 +1059,6 @@ rule encodeDecodeWorks_witness_2() {
 
 // Property #6: An Envelope should be delivered to destination only once.
 //6.1 Cannot deliver twice - cannot call receiveCrossChainMessage() and then deliverEnvelope() with the same envelope
-
-//fail with different envelopeIDsץ Root cause: CERT-3411, CERT-3193
-// https://prover.certora.com/output/99352/8c15856c73b545feb7dc14459fccfe96/?anonymousKey=149315783b2792b3894ceb55b717308b188e42ba
-//fail 
 rule no_deliverEnvelope_after_receiveCrossChainMessage
 {
   env e1;
@@ -1070,7 +1067,7 @@ rule no_deliverEnvelope_after_receiveCrossChainMessage
   
   bytes encodedTransaction;
   uint256 originChainId;
-  EnvelopeUtils.Envelope envelope1 = getEnvelope(encodedTransaction);
+  EnvelopeUtils.Envelope envelope1 = getEnvelope_with_require(encodedTransaction);
   mathint receiveCrossChainMessage_call_counter_before = _BaseReceiverPortalDummy.receiveCrossChainMessage_success_counter();
   receiveCrossChainMessage(e1, encodedTransaction, originChainId);
   mathint receiveCrossChainMessage_call_counter_after = _BaseReceiverPortalDummy.receiveCrossChainMessage_success_counter();
@@ -1082,46 +1079,94 @@ rule no_deliverEnvelope_after_receiveCrossChainMessage
 
 }
 
-
-
-
-
-//Ignore fail in CI
-// For debugging of CERT-3411, CERT-3193
-rule check_getEnvelope_with_require 
+rule cannot_call_BaseReceiverPortal_receiveCrossChainMessage_twice
 {
-  env e1;
-  bytes encodedTransaction;
-  uint256 originChainId;
-  
-  EnvelopeUtils.Envelope envelope1 = getEnvelope_with_require(encodedTransaction);
-  bytes32 envelopeId = getEnvelopeId(envelope1);
-  ICrossChainReceiver.EnvelopeState envelope_state_before = getEnvelopeState(envelopeId);
-  
-  short_receiveCrossChainMessage(e1, encodedTransaction, originChainId);
-  ICrossChainReceiver.EnvelopeState envelope_state_after = getEnvelopeState(envelopeId);
-  require envelope_state_before  == ICrossChainReceiver.EnvelopeState.None;
-  assert envelope_state_before == envelope_state_after;
-  
-  
+  env e1; env e2;
+  bytes encodedTransaction; uint256 chainId;
+  EnvelopeUtils.Envelope envelope = getEnvelope_with_require(encodedTransaction); 
+  mathint count_before = _BaseReceiverPortalDummy.get_receive_cross_chain_message_counter
+          (envelope.origin, envelope.originChainId, envelope.message);
+
+  receiveCrossChainMessage(e1, encodedTransaction, chainId);
+
+  deliverEnvelope(e2, envelope);
+  mathint count_after = _BaseReceiverPortalDummy.get_receive_cross_chain_message_counter
+            (envelope.origin, envelope.originChainId, envelope.message);
+
+
+  assert count_after - count_before < 2;
+}
+
+//todo: remove
+rule receive_count_lt_without_require
+{
+  env e1; env e2;
+  address originSender; uint256 originChainId; bytes message;
+  mathint count_before = _BaseReceiverPortalDummy.get_receive_cross_chain_message_counter(originSender, originChainId, message);
+
+  bytes encodedTransaction; uint256 chainId;
+  receiveCrossChainMessage(e1, encodedTransaction, chainId);
+
+  EnvelopeUtils.Envelope envelope = getEnvelope_without_require(encodedTransaction); 
+  deliverEnvelope(e2, envelope);
+  mathint count_after = _BaseReceiverPortalDummy.get_receive_cross_chain_message_counter(originSender, originChainId, message);
+
+  assert count_after - count_before < 2;
+//  assert count_before == 0 => count_after < 2;
+}
+
+//todo: remove
+rule receive_count_lt_2_with_require
+{
+  env e1; env e2;
+  address originSender; uint256 originChainId; bytes message;
+  mathint count_before = _BaseReceiverPortalDummy.get_receive_cross_chain_message_counter(originSender, originChainId, message);
+
+  bytes encodedTransaction; uint256 chainId;
+  receiveCrossChainMessage(e1, encodedTransaction, chainId);
+
+  EnvelopeUtils.Envelope envelope = getEnvelope_with_require(encodedTransaction);
+  deliverEnvelope(e2, envelope);
+  mathint count_after = _BaseReceiverPortalDummy.get_receive_cross_chain_message_counter(originSender, originChainId, message);
+   
+  assert count_before == 0 => count_after < 2;
 }
 
 
-//Ignore fail in CI
-// For debugging of CERT-3411, CERT-3193
-rule check_getEnvelope 
-{
-  env e1;
-  bytes encodedTransaction;
-  uint256 originChainId;
-  
-  EnvelopeUtils.Envelope envelope1 = getEnvelope_with_require(encodedTransaction);
-  bytes32 envelopeId = getEnvelopeId(envelope1);
-  ICrossChainReceiver.EnvelopeState envelope_state_before = getEnvelopeState(envelopeId);
-  short_receiveCrossChainMessage(e1, encodedTransaction, originChainId);
-  ICrossChainReceiver.EnvelopeState envelope_state_after = getEnvelopeState(envelopeId);
-  require envelope_state_before  == ICrossChainReceiver.EnvelopeState.None;
-  assert envelope_state_before == envelope_state_after;
-  
-  
+
+ghost mapping(bytes32 => ICrossChainReceiver.EnvelopeState) mirror_envelopesState{ 
+    init_state axiom forall bytes32 id. mirror_envelopesState[id] == ICrossChainReceiver.EnvelopeState.None;
 }
+
+hook Sload ICrossChainReceiver.EnvelopeState state _envelopesState [KEY bytes32 key] STORAGE {
+    require(mirror_envelopesState[key] == state);
+}
+
+hook Sstore _envelopesState [KEY bytes32 key] ICrossChainReceiver.EnvelopeState new_state (ICrossChainReceiver.EnvelopeState old_state)  STORAGE {
+    require (mirror_envelopesState[key] == old_state);
+    mirror_envelopesState[key] = new_state;
+
+}
+
+
+//Todo: debug and remove
+rule deliver_after_receive_succeed
+{
+  env e1; env e2;
+  
+  require e2.msg.value == 0;
+  require (forall bytes32 id. mirror_envelopesState[id] == ICrossChainReceiver.EnvelopeState.None);
+
+  bytes encodedTransaction; uint256 chainId;
+  EnvelopeUtils.Envelope envelope = getEnvelope_without_require(encodedTransaction); 
+  bytes32 envelopeId = getEnvelopeId(encodedTransaction);
+
+  receiveCrossChainMessage(e1, encodedTransaction, chainId);
+  require getEnvelopeState(envelopeId) ==  ICrossChainReceiver.EnvelopeState.Confirmed;
+
+  deliverEnvelope@withrevert(e2, envelope);
+  assert !lastReverted;
+}
+
+
+
