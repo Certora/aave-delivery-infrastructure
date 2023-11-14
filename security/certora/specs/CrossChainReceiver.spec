@@ -79,11 +79,10 @@ rule transaction_received_only_from_authorized_bridge_adapter
 
 
 //2. Only the Owner can set the receiver's bridge adapters.
-rule only_owner_can_change_bridge_adapters
+rule only_owner_can_change_bridge_adapters(method f) filtered { f-> !f.isView }
 {
   env e;
   calldataarg args;
-  method f;
   address bridgeAdapter;
   uint256 chainId;
 
@@ -227,11 +226,10 @@ rule only_single_bridge_adapter_removed
 
 
 // 3: Only the Owner can set the required confirmations.
-rule only_owner_can_change_required_confirmations
+rule only_owner_can_change_required_confirmations(method f) filtered { f-> !f.isView }
 {
   env e;
   calldataarg args;
-  method f;
   uint256 chainId;
 
   ICrossChainReceiver.ReceiverConfiguration config_before = getConfigurationByChain(chainId);
@@ -278,17 +276,16 @@ rule receive_more_than__requiredConfirmations_diff_2
   require e1.block.timestamp <= e2.block.timestamp;   
   require e2.block.timestamp < 2 ^ 120;   
    
-  bytes32 transactionId;
-  mathint confirmations_before = get_confirmations(transactionId);
-
-  bytes32 envelopeId;
-  ICrossChainReceiver.EnvelopeState envelope_state_before = getEnvelopeState(envelopeId);
-  
   bytes encodedTransaction1;
   uint256 originChainId1;
 
-  require transactionId == getEncodedTransactionId(encodedTransaction1);
-  require envelopeId == getEnvelopeId(encodedTransaction1);
+  bytes32 transactionId = getEncodedTransactionId(encodedTransaction1);
+  mathint confirmations_before = get_confirmations(transactionId);
+
+  bytes32 envelopeId = getEnvelopeId(encodedTransaction1);
+
+  ICrossChainReceiver.EnvelopeState envelope_state_before = getEnvelopeState(envelopeId);
+  
 
   receiveCrossChainMessage(e1, encodedTransaction1, originChainId1);
   receiveCrossChainMessage(e2, encodedTransaction1, originChainId1);
@@ -315,16 +312,17 @@ rule receive_more_than__requiredConfirmations_diff_3
   require e2.block.timestamp <= e3.block.timestamp;   
   require e3.block.timestamp < 2 ^ 120;   
    
-  bytes32 transactionId;
-  mathint confirmations_before = get_confirmations(transactionId);
-
-  bytes32 envelopeId;
-  ICrossChainReceiver.EnvelopeState envelope_state_before = getEnvelopeState(envelopeId);
+   
   bytes encodedTransaction1;
   uint256 originChainId1;
 
-  require transactionId == getEncodedTransactionId(encodedTransaction1);
-  require envelopeId == getEnvelopeId(encodedTransaction1);
+  bytes32 transactionId = getEncodedTransactionId(encodedTransaction1);
+  mathint confirmations_before = get_confirmations(transactionId);
+
+  bytes32 envelopeId = getEnvelopeId(encodedTransaction1);
+
+  ICrossChainReceiver.EnvelopeState envelope_state_before = getEnvelopeState(envelopeId);
+  
 
   receiveCrossChainMessage(e1, encodedTransaction1, originChainId1);
   receiveCrossChainMessage(e2, encodedTransaction1, originChainId1);
@@ -518,10 +516,7 @@ rule invalidate_previous_unconfirmed_envelopes_after_updateMessagesValidityTimes
     env e1;
     env e2;
     env e3;
-    require e1.block.timestamp <= e2.block.timestamp;
-    require e2.block.timestamp <= e3.block.timestamp;
     require e1.block.timestamp > 0;
-    require e3.block.timestamp < 2^120;
     
     calldataarg args1;
     bytes encodedTransaction;
@@ -601,11 +596,10 @@ rule invalidate_previous_unconfirmed_envelopes_after_updateMessagesValidityTimes
 rule receiveCrossChainMessage_cannot_change_state_if_requiredConfirmation_is_zero
 {
   env e;
+  bytes encodedTransaction;
   uint256 chainId;
 
-  bytes32 envelopeId;
-  bytes encodedTransaction;
-  require envelopeId == getEnvelopeId(encodedTransaction);
+  bytes32 envelopeId = getEnvelopeId(encodedTransaction);
   ICrossChainReceiver.EnvelopeState envelope_state_before = getEnvelopeState(envelopeId);
   
   uint8 requiredConfirmation = getRequiredConfirmation(chainId);
@@ -624,9 +618,8 @@ rule receiveCrossChainMessage_cannot_change_state_if_requiredConfirmation_is_zer
 
 // State transition rules
 //allowed transitions are none -> confirmed, none -> delivered, confirmed -> delivered
-rule envelope_state{
-
-    method f;
+rule envelope_state(method f) filtered { f-> !f.isView }
+{
     env e;
     calldataarg args;
     bytes32 envelopeId;
@@ -757,7 +750,6 @@ rule confirmations_increments_if_received_from_msg_sender(method f) filtered { f
 {
   env e;
 
-  require e.block.timestamp < 2^100;
   calldataarg args;
   
   bytes32 transactionId;
@@ -869,12 +861,10 @@ rule disallowReceiverBridgeAdapters_cannot_allow_witness_consequent
 }
 
 // Property 11: requiredConfirmation > 0
-rule requiredConfirmation_is_positive_after_updateConfirmations(uint256 chainId)
+rule requiredConfirmation_is_positive_after_updateConfirmations(uint256 chainId, method f) filtered { f-> !f.isView }
 {
-
       env e;
       calldataarg args;
-      method f;
       require getRequiredConfirmation(chainId) > 0;
       f(e, args);
       assert getRequiredConfirmation(chainId) > 0;
@@ -888,18 +878,15 @@ rule receive_increments_confirmations
 {
   env e;
    
-  bytes32 transactionId;
-  mathint confirmations_before = get_confirmations(transactionId);
-
-  bytes32 envelopeId;
-  ICrossChainReceiver.EnvelopeState envelope_state_before = getEnvelopeState(envelopeId);
-  
   bytes encodedTransaction;
   uint256 originChainId;
 
-  require transactionId == getEncodedTransactionId(encodedTransaction);
-  require envelopeId == getEnvelopeId(encodedTransaction);
+  bytes32 transactionId = getEncodedTransactionId(encodedTransaction);
+  mathint confirmations_before = get_confirmations(transactionId);
 
+  bytes32 envelopeId = getEnvelopeId(encodedTransaction);
+  ICrossChainReceiver.EnvelopeState envelope_state_before = getEnvelopeState(envelopeId);
+  
   receiveCrossChainMessage(e, encodedTransaction, originChainId);
 
   ICrossChainReceiver.EnvelopeState envelope_state_after = getEnvelopeState(envelopeId);
