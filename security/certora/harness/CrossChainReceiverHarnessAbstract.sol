@@ -3,12 +3,11 @@ pragma solidity ^0.8.8;
 import {CrossChainReceiver} from '../../../src/contracts/CrossChainReceiver.sol';
 import {Envelope, Transaction, TransactionUtils} from '../../../src/contracts/libs/EncodingUtils.sol';
 import {EnumerableSet} from '../../../src/contracts/interfaces/ICrossChainReceiver.sol';
-import {ICrossChainReceiverHarness} from './ICrossChainReceiverHarness.sol';
 import {Errors} from '../../../src/contracts/libs/Errors.sol';
 import {IBaseReceiverPortal} from '../../../src/contracts/interfaces/IBaseReceiverPortal.sol';
 
 
-abstract contract CrossChainReceiverHarnessAbstract is CrossChainReceiver, ICrossChainReceiverHarness {
+abstract contract CrossChainReceiverHarnessAbstract is CrossChainReceiver {
   using EnumerableSet for EnumerableSet.AddressSet;
 
     bytes malicious_s;
