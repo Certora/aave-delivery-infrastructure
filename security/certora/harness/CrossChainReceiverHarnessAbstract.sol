@@ -33,15 +33,8 @@ abstract contract CrossChainReceiverHarnessAbstract is CrossChainReceiver, ICros
         return toReturn; 
     }
 
-        //todo: remove
-        function getEnvelope_without_require(bytes memory encodedTransaction) external returns (Envelope memory) {
-        Transaction memory transaction = TransactionUtils.decode(encodedTransaction);
-        Envelope memory toReturn = transaction.getEnvelope();
-        return toReturn;
-    }
-
        
-        function getEnvelope_with_require(bytes memory encodedTransaction) external returns (Envelope memory) {
+    function getEnvelope(bytes memory encodedTransaction) external returns (Envelope memory) {
         Transaction memory transaction = TransactionUtils.decode(encodedTransaction);
         Envelope memory toReturn = transaction.getEnvelope();
         require(keccak256(abi.encode(toReturn)) == keccak256(transaction.encodedEnvelope));//TODO: check as an assertion on the forwarder

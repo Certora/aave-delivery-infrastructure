@@ -67,7 +67,6 @@ hook Sload uint256 val _max_TXnonce STORAGE {
 
 ghost mapping(bytes32 => uint256) mirror_TXid_2_TXnonceP1 { 
     init_state axiom forall bytes32 a. mirror_TXid_2_TXnonceP1[a] == 0;
-    //    axiom forall bytes32 a. mirror_TXid_2_TXnonceP1[a] >= 0;// && mirror_TXid_2_TXnonceP1[a] <= MAX_UINT256(); //todo: remove once https://certora.atlassian.net/browse/CERT-1060 is resolved
 }
 hook Sstore _TXid_2_TXnonceP1[KEY bytes32 key] uint256 newVal (uint256 oldVal) STORAGE {
       mirror_TXid_2_TXnonceP1[key] = newVal;

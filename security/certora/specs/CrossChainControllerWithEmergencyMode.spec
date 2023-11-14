@@ -19,7 +19,7 @@ definition is_invalidating_function(method f) returns bool =
     ICrossChainForwarder.ForwarderBridgeAdapterConfigInput[],
     ICrossChainForwarder.BridgeAdapterToDisable[]).selector;
 
-// // Propert #9: Only the Owner or Guardian in emergency state can invalidate Envelopes.
+// Propert #9: Only the Owner or Guardian in emergency state can invalidate Envelopes.
 //todo: add check of emergency state
 rule only_owner_change_validityTimestamp(method f) 
 filtered {f -> is_invalidating_function(f)}
