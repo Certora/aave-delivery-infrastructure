@@ -156,6 +156,9 @@ filtered {f -> f.selector == sig:updateConfirmations(ICrossChainReceiver.Confirm
 
 // If an envelope has (requiredConfirmations - n) confirmations, 
 // then n different adaptors must call receiveCrossChainMessage in order to change the enevlope's state (checked for n=2, 3).  
+// TODO: low priority - check the general case (diff > 3)
+// TODO: check if exactly n confirmation arrived the state must change to confirmed. 
+
 rule receive_more_than__requiredConfirmations_diff_2
 {
   env e1;
