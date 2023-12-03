@@ -56,3 +56,4 @@ jobs:
           - verifyCrossChainForwarder-newEnvelope.conf
           - verifyCrossChainForwarder-sanity.conf
           - verifyCrossChainForwarder-simpleRules.conf
+          - verifyCrossChainForwarder-encode-decode-correct.conf --rule encode_decode_well_formed_TX
