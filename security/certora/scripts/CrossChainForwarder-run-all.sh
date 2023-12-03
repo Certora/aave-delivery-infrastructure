@@ -18,3 +18,8 @@ certoraRun --send_only \
 certoraRun --send_only \
            --fe_version latest \
            security/certora/confs/verifyCrossChainForwarder-invariants.conf
+
+certoraRun --send_only \
+           --fe_version latest \
+           security/certora/confs/verifyCrossChainForwarder-encode-decode-correct.conf \
+           --rule encode_decode_well_formed_TX
