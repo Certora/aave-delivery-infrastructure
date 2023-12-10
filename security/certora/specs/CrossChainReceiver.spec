@@ -970,6 +970,23 @@ rule only_single_bridge_adapter_removed
 
 }
 
+rule checkUpdateMessagesValidityTimestamp{
+    
+    env e;
+    ICrossChainReceiver.ValidityTimestampInput[] newValidityTimestamp;
+    
+    updateMessagesValidityTimestamp(e, newValidityTimestamp);
+    
+    uint256 chainId;
+    uint120 validityTimestamp = getValidityTimestamp(chainId);
+
+    bool no_duplicate_chainId = newValidityTimestamp[0].chainId != newValidityTimestamp[1].chainId && newValidityTimestamp.length <= 2;
+
+    assert newValidityTimestamp[0].chainId == chainId && no_duplicate_chainId => newValidityTimestamp[0].validityTimestamp == validityTimestamp;
+    assert newValidityTimestamp[1].chainId == chainId && no_duplicate_chainId => newValidityTimestamp[1].validityTimestamp == validityTimestamp;
+}
+
+
 //method reachability
 rule reachability {
   env e;
