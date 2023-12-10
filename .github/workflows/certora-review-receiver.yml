@@ -67,5 +67,5 @@ jobs:
           #- verifyCrossChainReceiver.conf --rule addressSetInvariant # TODO: uncomment when moving to cli 5.0.2 or higher
           #- verifyCrossChainReceiver.conf --rule cannot_call_BaseReceiverPortal_receiveCrossChainMessage_twice # TODO: uncomment when moving to cli 5.0.2 or higher
           - verifyCrossChainReceiver.conf --rule zero_firstBridgedAt_iff_not_received_from_msg_sender
-          - verifyCrossChainReceiver.conf --rule cannot_call_IBaseReceiverPortal_receiveCrossChainMessage_twice
+          #- verifyCrossChainReceiver.conf --rule cannot_call_IBaseReceiverPortal_receiveCrossChainMessage_twice # TODO: uncomment when moving to cli >= 6
           - verifyCrossChainReceiver.conf --rule checkUpdateMessagesValidityTimestamp
