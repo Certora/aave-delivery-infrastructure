@@ -9,6 +9,19 @@ import {Transaction, EncodedTransaction, Envelope, EncodedEnvelope, TransactionU
  * @dev Needed to use `EnvelopeUtils` methods.
  */
 contract CrossChainForwarderHarness is CrossChainForwarder {
+    bool _bridgeTransaction_was_called = false;
+    bytes32 _envelopeId;
+    bytes32 _transactionId;
+
+    uint256 _last_nonceTX_sent;
+    uint256 _max_TXnonce;  // the maximal TX nonce ever sent
+
+    mapping(bytes32 => bytes32) _TXid_2_ENid;  // transaction ID => envelope ID
+
+    // mapping from TX-id to TX-nonce + 1.
+    // Hence TXid was sended if and only if _TXid_2_TXnonceP1[TXid]>0
+    mapping(bytes32 => uint) _TXid_2_TXnonceP1; 
+
     constructor(
                 ForwarderBridgeAdapterConfigInput[] memory bridgeAdaptersToEnable,
                 address[] memory sendersToApprove
@@ -58,18 +71,6 @@ contract CrossChainForwarderHarness is CrossChainForwarder {
         return ret_val;
     }
 
-    bool _bridgeTransaction_was_called = false;
-    bytes32 _envelopeId;
-    bytes32 _transactionId;
-
-    uint256 _last_nonceTX_sent;
-    uint256 _max_TXnonce;  // the maximal TX nonce ever sent
-
-    mapping(bytes32 => bytes32) _TXid_2_ENid;  // transaction ID => envelope ID
-
-    // mapping from TX-id to TX-nonce + 1.
-    // Hence TXid was sended if and only if _TXid_2_TXnonceP1[TXid]>0
-    mapping(bytes32 => uint) _TXid_2_TXnonceP1; 
     
     function reset_harness_storage() external {
         _bridgeTransaction_was_called = false;
