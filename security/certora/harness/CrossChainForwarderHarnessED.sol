@@ -14,8 +14,11 @@ contract CrossChainForwarderHarnessED is CrossChainForwarder {
 
     constructor(
                 ForwarderBridgeAdapterConfigInput[] memory bridgeAdaptersToEnable,
-                address[] memory sendersToApprove
-    ) CrossChainForwarder (bridgeAdaptersToEnable, sendersToApprove) {
+                address[] memory sendersToApprove,
+                OptimalBandwidthByChain[] memory optimalBandwidthByChain
+    ) CrossChainForwarder (bridgeAdaptersToEnable,
+                           sendersToApprove,
+                           optimalBandwidthByChain) {
     }
 
     /* ==============================================================================
