@@ -29,7 +29,8 @@ contract BaseCCForwarderTest is BaseTest, CrossChainForwarder {
   constructor()
     CrossChainForwarder(
       new ICrossChainForwarder.ForwarderBridgeAdapterConfigInput[](0),
-      new address[](0)
+      new address[](0),
+      new ICrossChainForwarder.OptimalBandwidthByChain[](0)
     )
   {}
 
@@ -113,6 +114,15 @@ contract BaseCCForwarderTest is BaseTest, CrossChainForwarder {
     _;
   }
 
+  modifier setOptimalBandwidth(uint256 destinationChainId, uint256 optimalBandwidth) {
+    OptimalBandwidthByChain[] memory optimalBandwidthByChain = new OptimalBandwidthByChain[](1);
+    optimalBandwidthByChain[0].optimalBandwidth = optimalBandwidth;
+    optimalBandwidthByChain[0].chainId = destinationChainId;
+
+    _updateOptimalBandwidthByChain(optimalBandwidthByChain);
+    _;
+  }
+
   // ------------------- Validators modifiers --------------------------
   modifier validateEnvelopeNonceIncrement() {
     uint256 beforeNonce = _currentEnvelopeNonce;
@@ -162,6 +172,32 @@ contract BaseCCForwarderTest is BaseTest, CrossChainForwarder {
     assertEq(_forwardedTransactions[extendedTx.transactionId], false);
   }
 
+  modifier validateOptimalBandwidthUsed(
+    ExtendedTransaction memory extendedTx,
+    uint256 optimalBandwidth
+  ) {
+    _;
+    uint256 destinationChainId = extendedTx.envelope.destinationChainId;
+    UsedAdapter[] memory usedAdapters = _currentlyUsedAdaptersByChain[destinationChainId];
+    uint256 successfulAdapters;
+    uint256 length = optimalBandwidth >= usedAdapters.length
+      ? usedAdapters.length
+      : optimalBandwidth;
+    for (uint256 i = 0; i < length; i++) {
+      if (usedAdapters[i].success) {
+        successfulAdapters++;
+      }
+    }
+
+    uint256 numberOfAdapters = this.getForwarderBridgeAdaptersByChain(destinationChainId).length;
+
+    if (optimalBandwidth == 0 || optimalBandwidth >= numberOfAdapters) {
+      assertEq(successfulAdapters, numberOfAdapters);
+    } else {
+      assertEq(successfulAdapters, optimalBandwidth);
+    }
+  }
+
   // ----- internal tests helpers ---------------
 
   function _registerEnvelope(ExtendedTransaction memory extendedTx) internal {
@@ -179,18 +215,31 @@ contract BaseCCForwarderTest is BaseTest, CrossChainForwarder {
     UsedAdapter[] memory usedAdapters = _currentlyUsedAdaptersByChain[
       extendedTx.envelope.destinationChainId
     ];
-    for (uint256 i = 0; i < usedAdapters.length; i++) {
-      vm.expectEmit(true, true, true, true);
-      emit TransactionForwardingAttempted(
-        extendedTx.transactionId,
-        extendedTx.envelopeId,
-        extendedTx.transactionEncoded,
-        extendedTx.envelope.destinationChainId,
-        usedAdapters[i].bridgeAdapterConfig.currentChainBridgeAdapter,
-        usedAdapters[i].bridgeAdapterConfig.destinationBridgeAdapter,
-        usedAdapters[i].success,
-        usedAdapters[i].returnData
-      );
+
+    ChainIdBridgeConfig[] memory shuffledAdapters = _getShuffledBridgeAdaptersByChain(
+      extendedTx.envelope.destinationChainId
+    );
+    for (uint256 i = 0; i < shuffledAdapters.length; i++) {
+      for (uint256 j = 0; j < usedAdapters.length; j++) {
+        if (
+          usedAdapters[j].bridgeAdapterConfig.currentChainBridgeAdapter ==
+          shuffledAdapters[i].currentChainBridgeAdapter &&
+          usedAdapters[j].bridgeAdapterConfig.destinationBridgeAdapter ==
+          shuffledAdapters[i].destinationBridgeAdapter
+        ) {
+          vm.expectEmit(true, true, true, true);
+          emit TransactionForwardingAttempted(
+            extendedTx.transactionId,
+            extendedTx.envelopeId,
+            extendedTx.transactionEncoded,
+            extendedTx.envelope.destinationChainId,
+            usedAdapters[j].bridgeAdapterConfig.currentChainBridgeAdapter,
+            usedAdapters[j].bridgeAdapterConfig.destinationBridgeAdapter,
+            usedAdapters[j].success,
+            usedAdapters[j].returnData
+          );
+        }
+      }
     }
     (bytes32 returnedEnvelopeId, bytes32 returnedTransactionId) = this.forwardMessage(
       extendedTx.envelope.destinationChainId,

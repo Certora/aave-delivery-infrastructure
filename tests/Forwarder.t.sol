@@ -28,6 +28,56 @@ contract ForwarderTest is BaseCCForwarderTest {
     _validateForwardMessageWhenAtLeastOneAdapterWorking(extendedTx);
   }
 
+  function testForwardMessage_optimalBandwidthLTAdapters(
+    address destination,
+    address origin,
+    uint256 destinationChainId
+  )
+    public
+    executeAs(origin)
+    approveSender(origin)
+    enableBridgeAdaptersForPath(destinationChainId, 5, AdapterSuccessType.ALL_SUCCESS)
+    setOptimalBandwidth(destinationChainId, 3)
+  {
+    ExtendedTransaction memory extendedTx = _generateExtendedTransaction(
+      TestParams({
+        destination: destination,
+        origin: origin,
+        originChainId: block.chainid,
+        destinationChainId: destinationChainId,
+        envelopeNonce: _currentEnvelopeNonce,
+        transactionNonce: _currentTransactionNonce
+      })
+    );
+
+    validateOptimalBandwidth(extendedTx, 3);
+  }
+
+  function testForwardMessage_optimalBandwidthGTAdapters(
+    address destination,
+    address origin,
+    uint256 destinationChainId
+  )
+    public
+    executeAs(origin)
+    approveSender(origin)
+    enableBridgeAdaptersForPath(destinationChainId, 5, AdapterSuccessType.ALL_SUCCESS)
+    setOptimalBandwidth(destinationChainId, 6)
+  {
+    ExtendedTransaction memory extendedTx = _generateExtendedTransaction(
+      TestParams({
+        destination: destination,
+        origin: origin,
+        originChainId: block.chainid,
+        destinationChainId: destinationChainId,
+        envelopeNonce: _currentEnvelopeNonce,
+        transactionNonce: _currentTransactionNonce
+      })
+    );
+
+    validateOptimalBandwidth(extendedTx, 6);
+  }
+
   function testForwardMessageWhenAdaptersNotWorking(
     address destination,
     address origin,
@@ -301,6 +351,26 @@ contract ForwarderTest is BaseCCForwarderTest {
     _validateRetryTransactionWhenAdaptersNotUnique(extendedTx);
   }
 
+  function test_Shuffle()
+    public
+    enableBridgeAdaptersForPath(1, 5, AdapterSuccessType.SOME_SUCCESS)
+    setOptimalBandwidth(1, 3)
+  {
+    ChainIdBridgeConfig[] memory shuffledBridges = _getShuffledBridgeAdaptersByChain(1);
+    assertEq(
+      shuffledBridges[0].currentChainBridgeAdapter == shuffledBridges[1].currentChainBridgeAdapter,
+      false
+    );
+    assertEq(
+      shuffledBridges[0].currentChainBridgeAdapter == shuffledBridges[2].currentChainBridgeAdapter,
+      false
+    );
+    assertEq(
+      shuffledBridges[1].currentChainBridgeAdapter == shuffledBridges[2].currentChainBridgeAdapter,
+      false
+    );
+  }
+
   // ----------- validations -----------------------
   function _validateRetryTransactionWhenAllAdaptersFail(
     ExtendedTransaction memory extendedTx
@@ -447,6 +517,13 @@ contract ForwarderTest is BaseCCForwarderTest {
     validateEnvelopRegistry(extendedTx)
     validateTransactionRegistry(extendedTx)
   {
+    _testForwardMessage(extendedTx);
+  }
+
+  function validateOptimalBandwidth(
+    ExtendedTransaction memory extendedTx,
+    uint256 optimalBandwidth
+  ) internal validateOptimalBandwidthUsed(extendedTx, optimalBandwidth) {
     _testForwardMessage(extendedTx);
   }
 }
