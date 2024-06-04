@@ -69,6 +69,17 @@ hook Sload uint256 val _max_TXnonce  {
 }
 
 
+ghost uint256 mirror_currentTransactionNonce {
+    init_state axiom mirror_currentTransactionNonce==0;
+}
+hook Sstore _currentTransactionNonce uint256 newVal (uint256 oldVal) {
+      mirror_currentTransactionNonce = newVal;
+}
+hook Sload uint256 val _currentTransactionNonce  {
+    require(mirror_currentTransactionNonce == val);
+}
+
+
 ghost mapping(bytes32 => uint256) mirror_TXid_2_TXnonceP1 { 
     init_state axiom forall bytes32 a. mirror_TXid_2_TXnonceP1[a] == 0;
 }
