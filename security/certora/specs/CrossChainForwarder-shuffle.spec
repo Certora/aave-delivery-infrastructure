@@ -1,7 +1,12 @@
 import "base.spec";
 
 /*==============================================================================
-
+  rule: _shuffle__amount_of_bridges
+  description: Check that the amount of bridges is in accordance with the value
+               of the optimal-bandwith. Namely, if the amount is 0 or biffer than 
+               the total amount of bridges we use all the bridges, and otherwise 
+               the number of bridges is the optimal-bandwith.
+  status: PASS.
   ============================================================================*/
 rule _shuffle__amount_of_bridges() {
   env e;
@@ -24,24 +29,22 @@ rule _shuffle__amount_of_bridges() {
 
 
 /*==============================================================================
-
+  rule: _shuffle__uniqueness_of_bridges
+  description: Check that the shuffling process doesn't produces the same adapter
+               more than once. Namely we check that all the adapters that are passed
+               to the function _bridgeTransaction are different from each other.
+  assumption: we only check for the case that the number of bridge-adapters is 4,
+              and the optimal-bandwith is 3.
+  status: PASS.
   ============================================================================*/
 rule _shuffle__uniqueness_of_bridges(method f) {
   env e;
   calldataarg args;
 
-  //  uint256 destinationChainId;
-  //address destination;
-  //uint256 gasLimit;
-  //bytes message;
-  //forwardMessage(e, destinationChainId, destination, gasLimit, message);
-
   reset_harness_storage();
   f(e,args);
 
   uint256 destinationChainId = get_param_destinationChainId();
-
-
   require getForwarderBridgeAdaptersByChain_len(destinationChainId)==4;
 
   address d0 = getForwarderBridgeAdaptersByChainAtPos_dest(destinationChainId,0);
