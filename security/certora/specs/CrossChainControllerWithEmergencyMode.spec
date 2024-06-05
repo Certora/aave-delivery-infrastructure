@@ -11,13 +11,15 @@ methods{
 definition is_invalidating_function(method f) returns bool =
   f.selector == sig:updateMessagesValidityTimestamp(ICrossChainReceiver.ValidityTimestampInput[]).selector ||
   f.selector == sig:solveEmergency(ICrossChainReceiver.ConfirmationInput[],
-    ICrossChainReceiver.ValidityTimestampInput[],
-    ICrossChainReceiver.ReceiverBridgeAdapterConfigInput[],
-    ICrossChainReceiver.ReceiverBridgeAdapterConfigInput[],
-    address[],
-    address[],
-    ICrossChainForwarder.ForwarderBridgeAdapterConfigInput[],
-    ICrossChainForwarder.BridgeAdapterToDisable[]).selector;
+                                   ICrossChainReceiver.ValidityTimestampInput[],
+                                   ICrossChainReceiver.ReceiverBridgeAdapterConfigInput[],
+                                   ICrossChainReceiver.ReceiverBridgeAdapterConfigInput[],
+                                   address[],
+                                   address[],
+                                   ICrossChainForwarder.ForwarderBridgeAdapterConfigInput[],
+                                   ICrossChainForwarder.BridgeAdapterToDisable[],
+                                   ICrossChainForwarder.OptimalBandwidthByChain[]
+                                  ).selector;
 
 // Propert #9: Only the Owner or Guardian in emergency state can invalidate Envelopes.
 //todo: add check of emergency state
