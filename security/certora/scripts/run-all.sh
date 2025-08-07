@@ -1,4 +1,4 @@
-CMN="--compilation_steps_only"
+#CMN="--compilation_steps_only"
 
 
 echo
@@ -36,4 +36,17 @@ echo
 echo "******** 7. Running:    ****************"
 certoraRun $CMN  security/certora/confs/verifyCrossChainForwarder-shuffle.conf \
            --msg "7.  "
+
+
+echo
+echo "******** 8. Running: All Receiver Rules   ****************"
+certoraRun $CMN  security/certora/confs/verifyCrossChainReceiver.conf  \
+           --msg "8. All Receiver Rules "
+
+
+echo
+echo "******** 9. Running: verifyCrossChainControllerWithEmergency.conf   ****************"
+certoraRun $CMN  security/certora/confs/verifyCrossChainControllerWithEmergency.conf  \
+           --msg "9. verifyCrossChainControllerWithEmergency.conf"
+
 
