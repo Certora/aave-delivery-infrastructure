@@ -10,4 +10,11 @@ constructor(address clEmergencyOracle) CrossChainControllerWithEmergencyMode(clE
     function get__emergencyCount() external view returns(uint256) {
         return _emergencyCount;
     }
+    /*
+    function get__destinationChainId(bytes memory encodedTransaction) external view returns(uint256) {
+      Transaction memory transaction = TransactionUtils.decode(encodedTransaction);
+      Envelope memory envelope = transaction.getEnvelope();
+
+      return envelope.destinationChainId;
+      }*/
 }

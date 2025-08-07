@@ -1,4 +1,5 @@
 import "methods.spec";
+using ArbAdapter as arb;
 
 methods{
   function get__emergencyCount() external returns(uint256)  envfree;
@@ -95,4 +96,36 @@ filtered {f -> is_invalidating_function(f)}
 }
 
 
+methods {
+  //  function arb.forwardMessage(address receiver,uint256 executionGasLimit,uint256 destinationChainId,bytes message)
+  //  external returns (address, uint256) envfree;
+  
+  //  function _.forwardMessage(address receiver,uint256 executionGasLimit,uint256 destinationChainId,bytes message)
+  //  external => NONDET;//arb.forwardMessage(receiver,executionGasLimit,destinationChainId,message) expect address, uint256;
 
+  function _.forwardMessage(address receiver,uint256 executionGasLimit,uint256 destinationChainId,bytes message)
+    external => DISPATCHER(true); //NONDET;//arb.forwardMessage(receiver,executionGasLimit,destinationChainId,message) expect address, uint256;
+}
+
+
+
+
+rule temp() {
+  env e; 
+
+  bytes encodedTransaction;
+  uint256 gasLimit;
+  address[] bridgeAdaptersToRetry;
+
+  uint256 _chainId;
+  require _chainId==10;
+
+  //  uint256 dest_ID = get__destinationChainId(encodedTransaction);
+  //require getForwarderBridgeAdaptersByChain(e, _chainId)[0].currentChainBridgeAdapter==arb;
+  require bridgeAdaptersToRetry[0]==arb;
+  
+  uint120 _validityTimestamp_before = getValidityTimestamp(_chainId);
+  retryTransaction(e,encodedTransaction, gasLimit, bridgeAdaptersToRetry);
+  uint120 _validityTimestamp_after = getValidityTimestamp(_chainId);
+  assert _validityTimestamp_before == _validityTimestamp_after;
+}

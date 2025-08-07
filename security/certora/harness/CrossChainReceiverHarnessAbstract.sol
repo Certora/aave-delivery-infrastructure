@@ -47,8 +47,8 @@ abstract contract CrossChainReceiverHarnessAbstract is CrossChainReceiver {
             return _transactionsState[transactionId].firstBridgedAt;
     }
     function getValidityTimestamp(uint256 chainId) external view returns (uint120) {
-    return _configurationsByChain[chainId].configuration.validityTimestamp;
-  }
+      return _configurationsByChain[chainId].configuration.validityTimestamp;
+    }
     function compare(bytes memory b1, bytes memory b2) external pure returns (bool) {
         return keccak256(abi.encodePacked(b1)) == keccak256(abi.encodePacked(b2));
     }
