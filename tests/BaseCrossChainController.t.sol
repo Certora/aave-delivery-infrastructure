@@ -2,20 +2,21 @@
 pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
-import {Address} from 'solidity-utils/contracts/oz-common/Address.sol';
-import {OwnableWithGuardian} from 'solidity-utils/contracts/access-control/OwnableWithGuardian.sol';
-import {IERC20} from 'solidity-utils/contracts/oz-common/interfaces/IERC20.sol';
+import {Address} from 'openzeppelin-contracts/contracts/utils/Address.sol';
+import {OwnableWithGuardian} from '../src/contracts/old-oz/OwnableWithGuardian.sol';
+import {IERC20} from 'openzeppelin-contracts/contracts/token/ERC20/IERC20.sol';
 import {ERC20} from './mocks/ERC20.sol';
 import {IBaseCrossChainController, ICrossChainForwarder, ICrossChainReceiver} from 'src/contracts/interfaces/IBaseCrossChainController.sol';
 import {TransparentProxyFactory} from 'solidity-utils/contracts/transparent-proxy/TransparentProxyFactory.sol';
-import {ChainIds} from '../src/contracts/libs/ChainIds.sol';
+import {ChainIds} from 'solidity-utils/contracts/utils/ChainHelpers.sol';
 import {Errors} from '../src/contracts/libs/Errors.sol';
 import {IBaseAdapter} from '../src/contracts/adapters/IBaseAdapter.sol';
+import {IRescuable} from 'solidity-utils/contracts/utils/interfaces/IRescuable.sol';
 
 abstract contract BaseCrossChainControllerTest is Test {
-  address public constant OWNER = address(123);
-  address public constant GUARDIAN = address(1234);
-  address public constant BRIDGE_ADAPTER = address(123456);
+  address public constant OWNER = address(65536 + 123);
+  address public constant GUARDIAN = address(65536 + 1234);
+  address public constant BRIDGE_ADAPTER = address(65536 + 123456);
 
   uint8 public constant CONFIRMATIONS = 1;
 
@@ -27,7 +28,6 @@ abstract contract BaseCrossChainControllerTest is Test {
   bytes32 public constant CROSS_CHAIN_CONTROLLER_SALT = keccak256('cross chain controller salt');
 
   IERC20 public testToken;
-  address public proxyAdmin;
 
   event ERC20Rescued(
     address indexed caller,
@@ -54,8 +54,6 @@ abstract contract BaseCrossChainControllerTest is Test {
     testToken = new ERC20('Test', 'TST');
     proxyFactory = new TransparentProxyFactory();
 
-    // deploy admin if not deployed before
-    proxyAdmin = proxyFactory.createDeterministicProxyAdmin(OWNER, PROXY_ADMIN_SALT);
 
     // receiver configs
     uint256[] memory chainIds = new uint256[](1);
@@ -77,14 +75,14 @@ abstract contract BaseCrossChainControllerTest is Test {
 
     // forwarder configs
     address[] memory sendersToApprove = new address[](1);
-    sendersToApprove[0] = address(102);
+    sendersToApprove[0] = address(65536 + 102);
     ICrossChainForwarder.ForwarderBridgeAdapterConfigInput[]
       memory forwarderBridgeAdaptersToEnable = new ICrossChainForwarder.ForwarderBridgeAdapterConfigInput[](
         1
       );
     forwarderBridgeAdaptersToEnable[0] = ICrossChainForwarder.ForwarderBridgeAdapterConfigInput({
-      currentChainBridgeAdapter: address(103),
-      destinationBridgeAdapter: address(110),
+      currentChainBridgeAdapter: address(65536 + 103),
+      destinationBridgeAdapter: address(65536 + 110),
       destinationChainId: ChainIds.POLYGON
     });
     ICrossChainForwarder.OptimalBandwidthByChain[]
@@ -97,14 +95,14 @@ abstract contract BaseCrossChainControllerTest is Test {
     crossChainControllerImpl = _deployControllerImplementation();
 
     vm.mockCall(
-      address(103),
+      address(65536 + 103),
       abi.encodeWithSelector(IBaseAdapter.setupPayments.selector),
       abi.encode()
     );
     crossChainController = IBaseCrossChainController(
       proxyFactory.createDeterministic(
         crossChainControllerImpl,
-        proxyAdmin,
+        OWNER,
         _getEncodedInitializer(
           OWNER,
           GUARDIAN,
@@ -144,7 +142,7 @@ abstract contract BaseCrossChainControllerTest is Test {
     vm.expectRevert(bytes(Errors.INVALID_REQUIRED_CONFIRMATIONS));
     proxyFactory.createDeterministic(
       crossChainControllerImpl,
-      proxyAdmin,
+      OWNER,
       _getEncodedInitializer(
         OWNER,
         GUARDIAN,
@@ -191,7 +189,7 @@ abstract contract BaseCrossChainControllerTest is Test {
 
     address recipient = address(1230123519);
 
-    vm.expectRevert((bytes('ONLY_RESCUE_GUARDIAN')));
+    vm.expectRevert(abi.encodeWithSelector(IRescuable.OnlyRescueGuardian.selector));
     crossChainController.emergencyEtherTransfer(recipient, 5 ether);
   }
 
@@ -224,7 +222,7 @@ abstract contract BaseCrossChainControllerTest is Test {
 
     address recipient = address(1230123519);
 
-    vm.expectRevert((bytes('ONLY_RESCUE_GUARDIAN')));
+    vm.expectRevert(abi.encodeWithSelector(IRescuable.OnlyRescueGuardian.selector));
     crossChainController.emergencyTokenTransfer(address(testToken), recipient, 3 ether);
   }
 }

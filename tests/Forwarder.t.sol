@@ -417,9 +417,7 @@ contract ForwarderTest is BaseCCForwarderTest {
       j < _currentlyUsedAdaptersByChain[extendedTx.envelope.destinationChainId].length;
       j++
     ) {
-      if (
-        _currentlyUsedAdaptersByChain[extendedTx.envelope.destinationChainId][j].success == true
-      ) {
+      if (_currentlyUsedAdaptersByChain[extendedTx.envelope.destinationChainId][j].success) {
         failedAdaptersCounter++;
       }
     }
@@ -436,9 +434,7 @@ contract ForwarderTest is BaseCCForwarderTest {
       k < _currentlyUsedAdaptersByChain[extendedTx.envelope.destinationChainId].length;
       k++
     ) {
-      if (
-        _currentlyUsedAdaptersByChain[extendedTx.envelope.destinationChainId][k].success == true
-      ) {
+      if (_currentlyUsedAdaptersByChain[extendedTx.envelope.destinationChainId][k].success) {
         bridgeAdaptersToRetry[index] = _currentlyUsedAdaptersByChain[
           extendedTx.envelope.destinationChainId
         ][k].bridgeAdapterConfig.currentChainBridgeAdapter;
@@ -450,7 +446,7 @@ contract ForwarderTest is BaseCCForwarderTest {
     }
 
     _mockAdaptersForwardMessage(extendedTx.envelope.destinationChainId);
-
+    bytes memory empty;
     for (uint256 i = 0; i < bridgeAdaptersToRetryConfig.length; i++) {
       vm.expectEmit(true, true, true, true);
       emit TransactionForwardingAttempted(
@@ -461,7 +457,7 @@ contract ForwarderTest is BaseCCForwarderTest {
         bridgeAdaptersToRetryConfig[i].currentChainBridgeAdapter,
         bridgeAdaptersToRetryConfig[i].destinationBridgeAdapter,
         true,
-        hex'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+        empty
       );
     }
     this.retryTransaction(extendedTx.transactionEncoded, GAS_LIMIT, bridgeAdaptersToRetry);
@@ -475,9 +471,11 @@ contract ForwarderTest is BaseCCForwarderTest {
     validateTransactionNonceIncrement
     validateTransactionRegistry(extendedTx)
   {
+    _mockAdaptersForwardMessage(extendedTx.envelope.destinationChainId);
     UsedAdapter[] memory usedAdapters = _currentlyUsedAdaptersByChain[
       extendedTx.envelope.destinationChainId
     ];
+    bytes memory empty;
     for (uint256 i = 0; i < usedAdapters.length; i++) {
       vm.expectEmit(true, true, true, true);
       emit TransactionForwardingAttempted(
@@ -488,7 +486,7 @@ contract ForwarderTest is BaseCCForwarderTest {
         usedAdapters[i].bridgeAdapterConfig.currentChainBridgeAdapter,
         usedAdapters[i].bridgeAdapterConfig.destinationBridgeAdapter,
         usedAdapters[i].success,
-        hex'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+        empty
       );
     }
     bytes32 transactionId = this.retryEnvelope(extendedTx.envelope, GAS_LIMIT);
