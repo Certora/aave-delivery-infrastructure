@@ -103,8 +103,23 @@ methods {
   //  function _.forwardMessage(address receiver,uint256 executionGasLimit,uint256 destinationChainId,bytes message)
   //  external => NONDET;//arb.forwardMessage(receiver,executionGasLimit,destinationChainId,message) expect address, uint256;
 
-  function _.forwardMessage(address receiver,uint256 executionGasLimit,uint256 destinationChainId,bytes message)
-    external => DISPATCHER(true); //NONDET;//arb.forwardMessage(receiver,executionGasLimit,destinationChainId,message) expect address, uint256;
+  //  function _.forwardMessage(address receiver,uint256 executionGasLimit,uint256 destinationChainId,bytes message)
+  //external => DISPATCHER(true); //NONDET;//arb.forwardMessage(receiver,executionGasLimit,destinationChainId,message) expect address, uint256;
+
+  //  unresolved external in _._ => DISPATCH(optimistic=true) [arb.forwardMessage(address,uint256,uint256,bytes)];
+  //  unresolved external in _._ => DISPATCH [arb.forwardMessage(address,uint256,uint256,bytes)] default HAVOC_ALL;
+
+  //unresolved external in _bridgeTransaction(bytes32,bytes32,bytes,uint256,uint256,ICrossChainForwarder.ChainIdBridgeConfig[])
+  //  => DISPATCH [arb.forwardMessage(address,uint256,uint256,bytes)] default HAVOC_ECF;
+
+  //unresolved external in _bridgeTransaction(bytes32,bytes32,bytes,uint256,uint256,ICrossChainForwarder.ChainIdBridgeConfig[])
+  //  => DISPATCH [arb.forwardMessage(address,uint256,uint256,bytes)] default HAVOC_ECF;
+
+  unresolved external in _.retryTransaction(bytes,uint256,address[])
+    => DISPATCH [arb.forwardMessage(address,uint256,uint256,bytes)] default HAVOC_ALL;
+
+  //  unresolved external in _.forwardMessage(address,uint256,uint256,bytes) =>
+  //  DISPATCH [arb.forwardMessage(address,uint256,uint256,bytes)] default HAVOC_ALL;
 }
 
 
@@ -122,6 +137,10 @@ rule temp() {
 
   //  uint256 dest_ID = get__destinationChainId(encodedTransaction);
   //require getForwarderBridgeAdaptersByChain(e, _chainId)[0].currentChainBridgeAdapter==arb;
+  require getForwarderBridgeAdaptersByChain(e, _chainId).length > 0;
+  require bridgeAdaptersToRetry[0] == getForwarderBridgeAdaptersByChain(e, _chainId)[0].currentChainBridgeAdapter;
+
+  
   require bridgeAdaptersToRetry[0]==arb;
   
   uint120 _validityTimestamp_before = getValidityTimestamp(_chainId);
