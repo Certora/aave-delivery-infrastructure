@@ -103,8 +103,8 @@ methods {
   //  function _.forwardMessage(address receiver,uint256 executionGasLimit,uint256 destinationChainId,bytes message)
   //  external => NONDET;//arb.forwardMessage(receiver,executionGasLimit,destinationChainId,message) expect address, uint256;
 
-  //  function _.forwardMessage(address receiver,uint256 executionGasLimit,uint256 destinationChainId,bytes message)
-  //external => DISPATCHER(true); //NONDET;//arb.forwardMessage(receiver,executionGasLimit,destinationChainId,message) expect address, uint256;
+  function _.forwardMessage(address receiver,uint256 executionGasLimit,uint256 destinationChainId,bytes message)
+    external => DISPATCHER(true);
 
   //  unresolved external in _._ => DISPATCH(optimistic=true) [arb.forwardMessage(address,uint256,uint256,bytes)];
   //  unresolved external in _._ => DISPATCH [arb.forwardMessage(address,uint256,uint256,bytes)] default HAVOC_ALL;
@@ -115,8 +115,8 @@ methods {
   //unresolved external in _bridgeTransaction(bytes32,bytes32,bytes,uint256,uint256,ICrossChainForwarder.ChainIdBridgeConfig[])
   //  => DISPATCH [arb.forwardMessage(address,uint256,uint256,bytes)] default HAVOC_ECF;
 
-  unresolved external in _.retryTransaction(bytes,uint256,address[])
-    => DISPATCH [arb.forwardMessage(address,uint256,uint256,bytes)] default HAVOC_ALL;
+  //  unresolved external in _.retryTransaction(bytes,uint256,address[])
+  //  => DISPATCH [arb.forwardMessage(address,uint256,uint256,bytes)] default HAVOC_ALL;
 
   //  unresolved external in _.forwardMessage(address,uint256,uint256,bytes) =>
   //  DISPATCH [arb.forwardMessage(address,uint256,uint256,bytes)] default HAVOC_ALL;
