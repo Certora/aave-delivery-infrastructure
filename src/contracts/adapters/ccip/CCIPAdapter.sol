@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
-import {SafeCast} from 'solidity-utils/contracts/oz-common/SafeCast.sol';
-import {SafeERC20} from 'solidity-utils/contracts/oz-common/SafeERC20.sol';
-import {IERC20} from 'solidity-utils/contracts/oz-common/interfaces/IERC20.sol';
+import {SafeCast} from 'openzeppelin-contracts/contracts/utils/math/SafeCast.sol';
+import {SafeERC20} from 'openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol';
+import {IERC20} from 'openzeppelin-contracts/contracts/token/ERC20/IERC20.sol';
 
 import {BaseAdapter, IBaseAdapter} from '../BaseAdapter.sol';
 import {ICCIPAdapter, IRouterClient} from './ICCIPAdapter.sol';
 import {IAny2EVMMessageReceiver, Client} from './interfaces/IAny2EVMMessageReceiver.sol';
 import {IERC165} from './interfaces/IERC165.sol';
 import {Errors} from '../../libs/Errors.sol';
-import {ChainIds} from '../../libs/ChainIds.sol';
+import {ChainIds} from 'solidity-utils/contracts/utils/ChainHelpers.sol';
 
 /**
  * @title CCIPAdapter
@@ -135,6 +135,10 @@ contract CCIPAdapter is ICCIPAdapter, BaseAdapter, IAny2EVMMessageReceiver, IERC
       return ChainIds.POLYGON;
     } else if (nativeChainId == uint64(11344663589394136015)) {
       return ChainIds.BNB;
+    } else if (nativeChainId == uint64(1346049177634351622)) {
+      return ChainIds.CELO;
+    } else if (nativeChainId == uint64(1673871237479749969)) {
+      return ChainIds.SONIC;
     }
     return nativeChainId;
   }
@@ -151,7 +155,12 @@ contract CCIPAdapter is ICCIPAdapter, BaseAdapter, IAny2EVMMessageReceiver, IERC
       return uint64(4051577828743386545);
     } else if (infraChainId == ChainIds.BNB) {
       return uint64(11344663589394136015);
+    } else if (infraChainId == ChainIds.CELO) {
+      return uint64(1346049177634351622);
+    } else if (infraChainId == ChainIds.SONIC) {
+      return uint64(1673871237479749969);
     }
     return infraChainId;
   }
 }
+

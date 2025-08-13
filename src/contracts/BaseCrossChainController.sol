@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.8;
 
-import {Initializable} from 'solidity-utils/contracts/transparent-proxy/Initializable.sol';
-import {Rescuable} from 'solidity-utils/contracts/utils/Rescuable.sol';
-import {IRescuable} from 'solidity-utils/contracts/utils/interfaces/IRescuable.sol';
+import {Initializable} from './old-oz/Initializable.sol';
+import {IERC20} from 'openzeppelin-contracts/contracts/token/ERC20/IERC20.sol';
+import {Rescuable, RescuableBase} from 'solidity-utils/contracts/utils/Rescuable.sol';
+import {IRescuable, IRescuableBase} from 'solidity-utils/contracts/utils/interfaces/IRescuable.sol';
 import {CrossChainReceiver} from './CrossChainReceiver.sol';
 import {CrossChainForwarder} from './CrossChainForwarder.sol';
 import {Errors} from './libs/Errors.sol';
@@ -61,9 +62,16 @@ contract BaseCrossChainController is
     );
   }
 
-  /// @inheritdoc IRescuable
-  function whoCanRescue() public view override(IRescuable, Rescuable) returns (address) {
+  /// @inheritdoc Rescuable
+  function whoCanRescue() public view override(Rescuable) returns (address) {
     return owner();
+  }
+
+  /// @inheritdoc IRescuableBase
+  function maxRescue(
+    address erc20Token
+  ) public view override(IRescuableBase, RescuableBase) returns (uint256) {
+    return IERC20(erc20Token).balanceOf(address(this));
   }
 
   /// @notice Enable contract to receive ETH/Native token

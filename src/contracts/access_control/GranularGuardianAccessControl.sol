@@ -4,8 +4,9 @@ pragma solidity ^0.8.8;
 import {ICrossChainForwarder} from '../interfaces/ICrossChainForwarder.sol';
 import {ICrossChainControllerWithEmergencyMode} from '../interfaces/ICrossChainControllerWithEmergencyMode.sol';
 import {IGranularGuardianAccessControl, Envelope, ICrossChainReceiver} from './IGranularGuardianAccessControl.sol';
-import {AccessControlEnumerable} from 'openzeppelin-contracts/contracts/access/AccessControlEnumerable.sol';
+import {AccessControlEnumerable} from 'openzeppelin-contracts/contracts/access/extensions/AccessControlEnumerable.sol';
 import {IWithGuardian} from 'solidity-utils/contracts/access-control/OwnableWithGuardian.sol';
+import {ICrossChainControllerWithEmergencyModeDeprecated} from '../interfaces/ICrossChainControllerWithEmergencyModeDeprecated.sol';
 
 /**
  * @title GranularGuardianAccessControl
@@ -89,6 +90,29 @@ contract GranularGuardianAccessControl is AccessControlEnumerable, IGranularGuar
       forwarderBridgeAdaptersToEnable,
       forwarderBridgeAdaptersToDisable,
       optimalBandwidthByChain
+    );
+  }
+
+  /// @inheritdoc IGranularGuardianAccessControl
+  function solveEmergencyDeprecated(
+    ICrossChainReceiver.ConfirmationInput[] memory newConfirmations,
+    ICrossChainReceiver.ValidityTimestampInput[] memory newValidityTimestamp,
+    ICrossChainReceiver.ReceiverBridgeAdapterConfigInput[] memory receiverBridgeAdaptersToAllow,
+    ICrossChainReceiver.ReceiverBridgeAdapterConfigInput[] memory receiverBridgeAdaptersToDisallow,
+    address[] memory sendersToApprove,
+    address[] memory sendersToRemove,
+    ICrossChainForwarder.ForwarderBridgeAdapterConfigInput[] memory forwarderBridgeAdaptersToEnable,
+    ICrossChainForwarder.BridgeAdapterToDisable[] memory forwarderBridgeAdaptersToDisable
+  ) external onlyRole(SOLVE_EMERGENCY_ROLE) {
+    ICrossChainControllerWithEmergencyModeDeprecated(CROSS_CHAIN_CONTROLLER).solveEmergency(
+      newConfirmations,
+      newValidityTimestamp,
+      receiverBridgeAdaptersToAllow,
+      receiverBridgeAdaptersToDisallow,
+      sendersToApprove,
+      sendersToRemove,
+      forwarderBridgeAdaptersToEnable,
+      forwarderBridgeAdaptersToDisable
     );
   }
 

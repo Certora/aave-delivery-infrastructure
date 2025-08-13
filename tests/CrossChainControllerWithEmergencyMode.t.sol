@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import './BaseCrossChainController.t.sol';
 import {ICLEmergencyOracle} from '../src/contracts/emergency/interfaces/ICLEmergencyOracle.sol';
 import {CrossChainControllerWithEmergencyMode, ICrossChainControllerWithEmergencyMode} from '../src/contracts/CrossChainControllerWithEmergencyMode.sol';
+import {IWithGuardian} from '../src/contracts/old-oz/interfaces/IWithGuardian.sol';
+import {Ownable} from 'openzeppelin-contracts/contracts/access/Ownable.sol';
 
 contract CrossChainControllerWithEmergencyModeTest is BaseCrossChainControllerTest {
   address public constant CL_EMERGENCY_ORACLE = address(12345);
@@ -74,7 +76,7 @@ contract CrossChainControllerWithEmergencyModeTest is BaseCrossChainControllerTe
     vm.expectRevert(bytes(Errors.INVALID_EMERGENCY_ORACLE));
     proxyFactory.createDeterministic(
       crossChainControllerImpl,
-      proxyAdmin,
+      OWNER,
       abi.encodeWithSelector(
         ICrossChainControllerWithEmergencyMode.initialize.selector,
         OWNER,
@@ -111,6 +113,11 @@ contract CrossChainControllerWithEmergencyModeTest is BaseCrossChainControllerTe
   }
 
   function testSolveEmergency() public {
+    ICrossChainForwarder.ChainIdBridgeConfig[]
+      memory forwarderBridgeAdaptersBefore = crossChainController.getForwarderBridgeAdaptersByChain(
+        ChainIds.POLYGON
+      );
+
     EmergencyArgs memory args = EmergencyArgs({
       newConfirmations: new ICrossChainReceiver.ConfirmationInput[](1),
       newValidityTimestamps: new ICrossChainReceiver.ValidityTimestampInput[](1),
@@ -214,9 +221,17 @@ contract CrossChainControllerWithEmergencyModeTest is BaseCrossChainControllerTe
     ICrossChainForwarder.ChainIdBridgeConfig[] memory forwarderBridgeAdapters = crossChainController
       .getForwarderBridgeAdaptersByChain(ChainIds.POLYGON);
 
-    assertEq(forwarderBridgeAdapters.length, 1);
-    assertEq(forwarderBridgeAdapters[0].destinationBridgeAdapter, address(210));
-    assertEq(forwarderBridgeAdapters[0].currentChainBridgeAdapter, address(203));
+    assertEq(forwarderBridgeAdapters.length, forwarderBridgeAdaptersBefore.length + 1);
+    assertEq(
+      forwarderBridgeAdapters[0].destinationBridgeAdapter,
+      forwarderBridgeAdaptersBefore[0].destinationBridgeAdapter
+    );
+    assertEq(
+      forwarderBridgeAdapters[0].currentChainBridgeAdapter,
+      forwarderBridgeAdaptersBefore[0].currentChainBridgeAdapter
+    );
+    assertEq(forwarderBridgeAdapters[1].destinationBridgeAdapter, address(210));
+    assertEq(forwarderBridgeAdapters[1].currentChainBridgeAdapter, address(203));
     assertEq(crossChainController.getOptimalBandwidthByChain(1), 3);
   }
 
@@ -358,7 +373,7 @@ contract CrossChainControllerWithEmergencyModeTest is BaseCrossChainControllerTe
   function testUpdateCLEmergencyOracleWhenNotOwner() public {
     address newChainlinkEmergencyOracle = address(101);
 
-    vm.expectRevert(bytes('Ownable: caller is not the owner'));
+    vm.expectRevert(bytes(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(this))));
     ICrossChainControllerWithEmergencyMode(address(crossChainController)).updateCLEmergencyOracle(
       newChainlinkEmergencyOracle
     );
