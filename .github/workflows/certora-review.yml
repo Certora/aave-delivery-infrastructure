@@ -38,7 +38,7 @@ jobs:
 
       - uses: Certora/certora-run-action@v2
         with:
-          cli-version: 7.31.0
+          cli-version: 7.31.2
           configurations: |-
             security/certora/confs/verifyCrossChainForwarder-envelopRetry.conf
             security/certora/confs/verifyCrossChainForwarder-invariants.conf
