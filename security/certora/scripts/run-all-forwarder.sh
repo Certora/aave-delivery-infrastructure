@@ -2,19 +2,19 @@
 
 
 echo
-echo "******** 1. Running:    ****************"
+echo "******** 1. Running: verifyCrossChainForwarder-sanity.conf   ****************"
 certoraRun $CMN  security/certora/confs/verifyCrossChainForwarder-sanity.conf  \
-           --msg "1.  "
+           --msg "1. verifyCrossChainForwarder-sanity.conf "
 
 echo
-echo "******** 2. Running:    ****************"
+echo "******** 2. Running: verifyCrossChainForwarder-envelopRetry.conf   ****************"
 certoraRun $CMN  security/certora/confs/verifyCrossChainForwarder-envelopRetry.conf \
-           --msg "2.  "
+           --msg "2. verifyCrossChainForwarder-envelopRetry.conf "
 
 echo
 echo "******** 3. Running:    ****************"
 certoraRun $CMN  security/certora/confs/verifyCrossChainForwarder-newEnvelope.conf \
-           --msg "3.  "
+           --msg "3. verifyCrossChainForwarder-newEnvelope.conf "
 
 echo
 echo "******** 4. Running:    ****************"
@@ -35,5 +35,18 @@ certoraRun $CMN  security/certora/confs/verifyCrossChainForwarder-encode-decode-
 echo
 echo "******** 7. Running:    ****************"
 certoraRun $CMN  security/certora/confs/verifyCrossChainForwarder-shuffle.conf \
-           --msg "7.  "
+           --msg "7. verifyCrossChainForwarder-shuffle.conf "
+
+
+echo
+echo "******** 8. Running: verifyCrossChainReceiver.conf   ****************"
+certoraRun $CMN  security/certora/confs/verifyCrossChainReceiver.conf \
+           --msg "8. verifyCrossChainReceiver.conf "
+
+
+echo
+echo "******** 9. Running: verifyCrossChainControllerWithEmergency.conf   ****************"
+certoraRun $CMN  security/certora/confs/verifyCrossChainControllerWithEmergency.conf \
+           --msg "9. verifyCrossChainControllerWithEmergency.conf"
+
 

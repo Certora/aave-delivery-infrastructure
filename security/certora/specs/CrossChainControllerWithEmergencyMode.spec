@@ -40,12 +40,12 @@ filtered {f -> is_invalidating_function(f)}
 }
 
 
-rule only_invalidating_functions_can_change_validityTimestamp(method f) 
-filtered {f -> !f.isView && 
-        // ignore CrossChainForwarder.enableBridgeAdapters() because CrossChainForwarder is out of scope
-        f.selector != sig:enableBridgeAdapters(ICrossChainForwarder.ForwarderBridgeAdapterConfigInput[]).selector 
-        }
-{
+rule only_invalidating_functions_can_change_validityTimestamp(method f) filtered {f ->
+    !f.isView &&
+    f.contract==currentContract &&
+    // ignore CrossChainForwarder.enableBridgeAdapters() because CrossChainForwarder is out of scope
+    f.selector != sig:enableBridgeAdapters(ICrossChainForwarder.ForwarderBridgeAdapterConfigInput[]).selector 
+    } {
   env e;
   calldataarg args;
   uint256 chainId;
@@ -148,3 +148,21 @@ rule temp() {
   uint120 _validityTimestamp_after = getValidityTimestamp(_chainId);
   assert _validityTimestamp_before == _validityTimestamp_after;
 }
+
+
+
+rule temp2(method f) filtered {f ->
+    !f.isView &&
+    f.contract==currentContract &&
+    // ignore CrossChainForwarder.enableBridgeAdapters() because CrossChainForwarder is out of scope
+    f.selector != sig:enableBridgeAdapters(ICrossChainForwarder.ForwarderBridgeAdapterConfigInput[]).selector 
+    } {
+  env e;
+  calldataarg args;
+  uint256 chainId;
+  uint120 validityTimestamp_before = getValidityTimestamp(chainId);
+  f(e, args);
+  uint120 validityTimestamp_after = getValidityTimestamp(chainId);
+  assert validityTimestamp_before != validityTimestamp_after => is_invalidating_function(f);
+}
+

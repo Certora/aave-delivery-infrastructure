@@ -318,7 +318,6 @@ contract CrossChainForwarder is OwnableWithGuardian, ICrossChainForwarder {
     return selectedForwarderAdapters;
   }
 
-  address ___currentChainBridgeAdapter;
   /**
    * @notice internal method that has the logic to forward a transaction to the specified chain
    * @param envelopeId the id of the envelope
@@ -339,7 +338,6 @@ contract CrossChainForwarder is OwnableWithGuardian, ICrossChainForwarder {
   ) internal returns (bool) {
     bool isForwardedAtLeastOnce = false;
     for (uint256 i = 0; i < bridgeAdapters.length; i++) {
-      ___currentChainBridgeAdapter = bridgeAdapters[i].currentChainBridgeAdapter;
       (bool success, bytes memory returnData) = bridgeAdapters[i]
         .currentChainBridgeAdapter
         .delegatecall(
